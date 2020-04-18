@@ -1,1 +1,1 @@
-from .linear_model import LinearRegression, RidgeRegression
+from .linear_model import OLSRegression, GradientRegression

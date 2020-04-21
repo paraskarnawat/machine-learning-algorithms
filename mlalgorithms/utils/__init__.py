@@ -1,1 +1,1 @@
-from .manipulation import shuffle, normalize, polynomial_features, fetch_batches, train_test_split
+from .manipulation import fetch_batches, one_hot_encoding, unhot_encoding

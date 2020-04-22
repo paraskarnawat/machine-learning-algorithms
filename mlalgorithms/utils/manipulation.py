@@ -55,4 +55,4 @@ def unhot_encoding(y):
     '''
         Convert one-hot encoding back to nominal values.
     '''
-    return np.argmax(y)
+    return np.argmax(y, axis=1)

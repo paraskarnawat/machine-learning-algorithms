@@ -14,19 +14,13 @@ class Model(object):
         self._fitted = False
 
     def _check(self, X, y=None):
-        # check if X is 2 dimensional or not
-        if X.ndim == 1:
-            X = X.reshape(-1, 1)
-
         # sanity check for number of instances in X and y
         if y is not None and (y.shape[0] != X.shape[0]):
             raise ValueError("`X` and `y` must have same number of instances")
-        
-        return X, y
 
     def fit(self, X, y=None):
         # fit the model to X and y
-        X, y = self._check(X, y)
+        self._check(X, y)
         self._fit(X, y)
         self._fitted = True
 

@@ -27,8 +27,6 @@ class Lasso(LinearRegression):
                     otherwise, mini-batch gradient descent is performed.
             fit_intercept: bool, default=True
                 if false, intercept will not be added to the relation
-            random_seed: int, default=None
-                seed for random values
 
         Attributes
         ----------
@@ -40,7 +38,7 @@ class Lasso(LinearRegression):
                 stores cost at each iteration
     '''
 
-    def __init__(self, C=0.1, learning_rate=0.01, n_iters=50, batch_size=32, fit_intercept=True, random_seed=None):
+    def __init__(self, C=0.1, learning_rate=0.01, n_iters=50, batch_size=32, fit_intercept=True):
         super(Lasso, self).__init__(fit_intercept=fit_intercept)
         self.C = C
         self.learning_rate = learning_rate
@@ -54,11 +52,11 @@ class Lasso(LinearRegression):
         # Copy the weights
         temp_coeff = coeff.copy()
         # Compute the error
-        err = H - y
+        err = y - H
         # Mean Squared Error + Regularization Cost
-        J = mean_squared_error(y, H) + (self.C * np.sum(np.abs(coeff)))
+        J = (mean_squared_error(y, H) * 0.5) + (self.C * np.sum(np.abs(coeff)))
         # Compute gradients with respect to predictions
-        grads = X.T.dot(err)
+        grads = - X.T.dot(err)
         # Compute gradients with respect to regularization
         reg_grads = np.sign(temp_coeff)
         # Compute the updates for the weights
@@ -73,12 +71,10 @@ class Lasso(LinearRegression):
         costs = []
 
         # initialize the coefficients
-        limit = 1. / sqrt(n_features)
-        np.random.seed(seed=self.random_seed)
-        coeff = np.random.uniform(-limit, limit, (n_features, ))
+        coeff = np.zeros((n_features, ))
 
         # perform gradient descent for `n_iter` iterations
-        for _ in range(self.n_iters):
+        for i in range(self.n_iters):
             # save the cost for each batch
             c_ = []
             for X_batch, y_batch in fetch_batches(X, y, batch_size=self.batch_size):

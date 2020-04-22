@@ -29,8 +29,6 @@ class LogisticRegression(LinearRegression):
                     otherwise, mini-batch gradient descent is performed.
             fit_intercept: bool, default=True
                 if false, intercept will not be added to the relation
-            random_seed: int, default=None
-                seed for random values
             cutoff: float, default=0.5
                 threshold for probability of being classified in positive class.
                 Must be between 0 and 1.
@@ -45,7 +43,7 @@ class LogisticRegression(LinearRegression):
                 stores cost at each iteration
     '''
 
-    def __init__(self, C=0.1, penalty='l2', learning_rate=0.01, n_iters=50, batch_size=32, fit_intercept=True, random_seed=None, cutoff=0.5):
+    def __init__(self, C=0.1, penalty='l2', learning_rate=0.01, n_iters=50, batch_size=32, fit_intercept=True, cutoff=0.5):
         super(LogisticRegression, self).__init__()
         self.C = C
         self.penalty = penalty
@@ -53,7 +51,6 @@ class LogisticRegression(LinearRegression):
         self.n_iters = n_iters
         self.batch_size = batch_size
         self._fit_intercept = fit_intercept
-        self.random_seed = random_seed
 
         if 0 < cutoff < 1:
             self.cutoff = cutoff
@@ -69,10 +66,18 @@ class LogisticRegression(LinearRegression):
         # regularization
         if bias_included:
             coeff = coeff_[1:]
+        else:
+            coeff = coeff_
         if self.penalty == 'l1':
-            return self.C * np.sum(np.abs(coeff))
+            if bias_included:
+                return self.C * np.sum(np.abs(coeff))
+            else:
+                return self.C * np.sum(np.sum(np.abs(coeff)))
         elif self.penalty == 'l2':
-            return self.C * np.sum(coeff ** 2) * 0.5
+            if bias_included:
+                return self.C * np.sum(coeff ** 2) * 0.5
+            else:
+                return self.C * np.sum(np.sum(coeff ** 2)) * 0.5
         return 0
 
     def _add_penalty_prime(self, coeff, bias_included=True):
@@ -105,13 +110,40 @@ class LogisticRegression(LinearRegression):
         X = self._add_intercept(X)
         _, n_features = X.shape
 
+        # fetch the number of classes
+        self.n_classes = len(np.unique(y))
+
+        # if multi-class classifcation, train one vs all
+        if self.n_classes > 2:
+            coeff = np.zeros((self.n_classes, n_features))
+            costs = []
+            intercepts = []
+            # training for each class
+            for c in range(self.n_classes):
+                y_ = (y == c).astype(int)
+                coeff[c, ], cost_ = self._train(X, y_, coeff[c, ].T)
+                intercepts.append(coeff[c, 0])
+                costs.append(cost_)
+
+            self.intercept_ = np.array(intercepts)
+            self.coeff_ = coeff[:, 1:].T
+        # binary classification
+        else:
+            coeff = np.zeros((n_features, ))
+            coeff, costs = self._train(X, y, coeff)
+            self.intercept_ = 0 if not self._fit_intercept else coeff[0]
+            self.coeff_ = coeff[1:]
+        
+        self.costs_ = np.array(costs)
+
+    def _train(self, X, y, coeff):
+        _, n_features = X.shape
+
         # save the costs per iteration
         costs = []
 
         # initialize the coefficients
-        limit = 1. / sqrt(n_features)
-        np.random.seed(seed=self.random_seed)
-        coeff = np.random.uniform(-limit, limit, (n_features, ))
+        coeff = np.zeros((n_features, ))
 
         # perform gradient descent for `n_iter` iterations
         for _ in range(self.n_iters):
@@ -126,11 +158,7 @@ class LogisticRegression(LinearRegression):
 
             # average cost for the batch
             costs.append(np.mean(c_))
-
-        self.intercept_ = coeff[0] if self._fit_intercept else 0
-        self.coeff_ = coeff[1:]
-
-        self.costs_ = np.array(costs)
+        return coeff, costs
 
     def predict_proba(self, X):
         # Predict the probabilty of X belonging to class 1
@@ -140,4 +168,6 @@ class LogisticRegression(LinearRegression):
     def _predict(self, X):
         # predict the class of X based on the cutoff (default: 0.5)
         predicted = self.predict_proba(X)
+        if self.n_classes > 2:
+            return np.argmax(predicted, axis=1)
         return np.where(predicted <= self.cutoff, 0, 1)

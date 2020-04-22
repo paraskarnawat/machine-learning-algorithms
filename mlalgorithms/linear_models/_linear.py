@@ -42,8 +42,8 @@ class LinearRegression(Model):
     def _fit(self, X, y):
         X = self._add_intercept(X)
         coeff = self._closed_form(X, y)
-        self.intercept_ = coeff[0:] if self._fit_intercept else 0
+        self.intercept_ = coeff[0] if self._fit_intercept else 0
         self.coeff_ = coeff[1:]
 
     def _predict(self, X):
-        return (X.dot(self.coeff_) + self.intercept_)
+        return ((X.dot(self.coeff_)) + self.intercept_)

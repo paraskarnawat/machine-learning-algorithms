@@ -32,7 +32,7 @@ def polynomial_kernel(const, power, **kwargs):
         return (np.inner(x_i, x_j) + const) ** power
     return f
 
-def rbf_kernel(gamma, *kwargs):
+def rbf_kernel(gamma, **kwargs):
     '''
         Radial Basic Function as Kernel Function
 

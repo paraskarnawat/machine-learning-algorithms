@@ -42,7 +42,7 @@ class SoftmaxRegression(LogisticRegression):
                 stores cost at each iteration
     '''
 
-    def __init__(self, C=0.1, penalty='l2', learning_rate=0.01, n_iters=50, batch_size=32, fit_intercept=True, random_seed=None):
+    def __init__(self, C=0.1, penalty='l1', learning_rate=0.01, n_iters=50, batch_size=32, fit_intercept=True, random_seed=None):
         super(SoftmaxRegression, self).__init__()
         self.C = C
         self.penalty = penalty
@@ -74,25 +74,21 @@ class SoftmaxRegression(LogisticRegression):
         return err, loss, gradients
 
     def _fit(self, X, y):
-        X = self._add_intercept(X)
         _, n_features = X.shape
 
         # save the costs per iteration
-        costs = []
+        costs = np.zeros((self.n_iters, ))
 
         y_enc, n_classes = one_hot_encoding(y)
 
         # initialize the coefficients
-        limit = 1. / sqrt(n_features)
-        np.random.seed(seed=self.random_seed)
-        coeff = np.random.uniform(-limit, limit, (n_features, n_classes))
+        coeff = np.zeros((n_features, n_classes))
         intercept = np.random.random_sample() if self._fit_intercept else 0
         # perform gradient descent for `n_iter` iterations
-        for _ in range(self.n_iters):
+        for i in range(self.n_iters):
             # save the cost for each batch
             c_ = []
             for X_batch, y_batch in fetch_batches(X, y_enc, self.batch_size):
-
                 err, J, gradients = self._gradient_step(
                     X_batch, y_batch, coeff, intercept)
                 c_.append(J)
@@ -100,8 +96,9 @@ class SoftmaxRegression(LogisticRegression):
                 coeff = coeff - (self.learning_rate * gradients)
                 intercept = intercept - \
                     (self.learning_rate * np.sum(err, axis=0))
+            
             # average cost for the batch
-            costs.append(np.mean(c_))
+            costs[i] = np.mean(c_)
 
         self.intercept_ = intercept if self._fit_intercept else 0
         self.coeff_ = coeff

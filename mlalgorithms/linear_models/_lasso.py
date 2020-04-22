@@ -3,6 +3,7 @@ from math import sqrt
 
 from mlalgorithms.linear_models import LinearRegression
 from mlalgorithms.utils import fetch_batches
+from mlalgorithms.metrics import mean_squared_error
 
 
 class Lasso(LinearRegression):
@@ -55,7 +56,7 @@ class Lasso(LinearRegression):
         # Compute the error
         err = H - y
         # Mean Squared Error + Regularization Cost
-        J = np.mean(err ** 2) + (self.C * np.sum(np.abs(coeff)))
+        J = mean_squared_error(y, H) + (self.C * np.sum(np.abs(coeff)))
         # Compute gradients with respect to predictions
         grads = X.T.dot(err)
         # Compute gradients with respect to regularization
@@ -97,4 +98,3 @@ class Lasso(LinearRegression):
 
     def _predict(self, X):
         return ((X.dot(self.coeff_)) + self.intercept_)
-

@@ -3,6 +3,8 @@ from math import sqrt
 
 from mlalgorithms.linear_models import LogisticRegression
 from mlalgorithms.utils import one_hot_encoding, unhot_encoding, fetch_batches
+from mlalgorithms.metrics import categorical_cross_entropy
+
 
 class SoftmaxRegression(LogisticRegression):
     '''
@@ -29,7 +31,7 @@ class SoftmaxRegression(LogisticRegression):
                 if false, intercept will not be added to the relation
             random_seed: int, default=None
                 seed for random values
-        
+
         Attributes
         ----------
             intercept_ = float
@@ -58,8 +60,8 @@ class SoftmaxRegression(LogisticRegression):
 
     def _loss(self, X, y, coeff, intercept_):
         # cross entropy loss function
-        H = self._softmax(X.dot(coeff) + intercept_) 
-        loss = - np.mean(y * np.log(H), axis=1)
+        H = self._softmax(X.dot(coeff) + intercept_)
+        loss = categorical_cross_entropy(y, H)
         loss = loss + self._add_penalty(coeff, bias_included=False)
         return H, loss
 
@@ -84,18 +86,20 @@ class SoftmaxRegression(LogisticRegression):
         limit = 1. / sqrt(n_features)
         np.random.seed(seed=self.random_seed)
         coeff = np.random.uniform(-limit, limit, (n_features, n_classes))
-        intercept = np.random.random_sample() if self._fit_intercept else 0 
+        intercept = np.random.random_sample() if self._fit_intercept else 0
         # perform gradient descent for `n_iter` iterations
         for _ in range(self.n_iters):
             # save the cost for each batch
             c_ = []
             for X_batch, y_batch in fetch_batches(X, y_enc, self.batch_size):
 
-                err, J, gradients = self._gradient_step(X_batch, y_batch, coeff, intercept)
+                err, J, gradients = self._gradient_step(
+                    X_batch, y_batch, coeff, intercept)
                 c_.append(J)
                 # update the weights
                 coeff = coeff - (self.learning_rate * gradients)
-                intercept = intercept - (self.learning_rate * np.sum(err, axis=0))
+                intercept = intercept - \
+                    (self.learning_rate * np.sum(err, axis=0))
             # average cost for the batch
             costs.append(np.mean(c_))
 

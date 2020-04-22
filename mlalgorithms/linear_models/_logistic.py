@@ -3,6 +3,8 @@ from math import sqrt
 
 from mlalgorithms.linear_models import LinearRegression
 from mlalgorithms.utils import fetch_batches
+from mlalgorithms.metrics import binary_cross_entropy
+
 
 class LogisticRegression(LinearRegression):
     '''
@@ -32,7 +34,7 @@ class LogisticRegression(LinearRegression):
             cutoff: float, default=0.5
                 threshold for probability of being classified in positive class.
                 Must be between 0 and 1.
-        
+
         Attributes
         ----------
             intercept_ = float
@@ -56,7 +58,8 @@ class LogisticRegression(LinearRegression):
         if 0 < cutoff < 1:
             self.cutoff = cutoff
         else:
-            raise ValueError("Cutoff must be between 0 and 1. You provided `{}`".format(cutoff))
+            raise ValueError(
+                "Cutoff must be between 0 and 1. You provided `{}`".format(cutoff))
 
     def _sigmoid(self, z):
         # sigmoid activation function
@@ -86,7 +89,7 @@ class LogisticRegression(LinearRegression):
     def _loss(self, X, y, coeff):
         # cross entropy loss function
         H = self._sigmoid(X.dot(coeff))
-        loss = - np.mean((y * np.log(H)) + ((1 - y) * np.log(1 - H)))
+        loss = binary_cross_entropy(y, H)
         loss = loss + self._add_penalty(coeff)
         return H, loss
 
